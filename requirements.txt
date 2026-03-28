@@ -1,0 +1,147 @@
+# ==========================================
+# CORE - AI FRAMEWORKS
+# ==========================================
+kimi-cli
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+langchain-moonshot
+langgraph>=0.2.0
+crewai>=0.80.0
+crewai-tools
+composio-core>=0.6.0
+composio-langchain
+pyautogen>=0.4.0
+phidata>=2.5.0
+instructor>=1.0.0
+litellm>=1.50.0
+browser-use>=0.1.0
+
+# ==========================================
+# BROWSER AUTOMATION
+# ==========================================
+playwright>=1.49.0
+nodriver
+camoufox
+undetected-chromedriver>=3.5.0
+selenium>=4.27.0
+webdriver-manager
+
+# ==========================================
+# SCRAPING SUPERPOWERS
+# ==========================================
+beautifulsoup4>=4.12.0
+requests>=2.32.0
+httpx[http2]>=0.28.0
+aiohttp>=3.11.0
+aiohttp-socks
+scrapy>=2.12.0
+scrapy-playwright
+trafilatura>=1.13.0
+newspaper3k
+markdownify
+html2text
+selectolax
+
+# ==========================================
+# SEARCH ENGINES
+# ==========================================
+duckduckgo-search>=6.3.0
+googlesearch-python
+serpapi
+
+# ==========================================
+# STEALTH & EVASION
+# ==========================================
+fake-useragent
+fpdf2
+PyExecJS
+
+# ==========================================
+# DATA & PARSING
+# ==========================================
+pandas>=2.2.0
+polars>=1.17.0
+pyarrow
+numpy>=2.1.0
+numba
+duckdb>=1.1.0
+redis>=5.2.0
+sqlalchemy>=2.0.0
+alembic
+
+# ==========================================
+# VALIDATION
+# ==========================================
+pydantic>=2.10.0
+pydantic-settings
+email-validator
+
+# ==========================================
+# PARSING
+# ==========================================
+lxml>=5.3.0
+cssselect
+parsel
+arrow
+python-dateutil
+pytz
+
+# ==========================================
+# API & SERVER
+# ==========================================
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+gunicorn
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+
+# ==========================================
+# NETWORKING
+# ==========================================
+aiofiles
+aioredis>=2.0.0
+websockets
+requests[socks]
+pysocks
+
+# ==========================================
+# RESILIENCE
+# ==========================================
+tenacity>=9.0.0
+ratelimit
+circuitbreaker
+backoff
+
+# ==========================================
+# API DOCUMENTATION
+# ==========================================
+mkdocs
+mkdocs-material
+
+# ==========================================
+# AI UTILITIES
+# ==========================================
+tiktoken>=0.8.0
+transformers>=4.47.0
+tokenizers
+sentencepiece
+sentence-transformers>=3.3.0
+
+# ==========================================
+# MONITORING & UTILS
+# ==========================================
+python-dotenv>=1.0.0
+loguru>=0.7.0
+rich>=13.9.0
+typer>=0.15.0
+click
+psutil
+memory-profiler
+line-profiler
+
+# ==========================================
+# DEVOPS
+# ==========================================
+supervisor

@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "proxies-sx": {
+      "command": "npx",
+      "args": ["-y", "@proxies-sx/mcp-server"],
+      "env": {
+        "PROXIES_SX_API_KEY": "${PROXIES_SX_API_KEY}"
+      }
+    },
+    "proxies-sx-browser": {
+      "command": "npx",
+      "args": ["-y", "@proxies-sx/browser-mcp"],
+      "env": {
+        "PROXIES_SX_API_KEY": "${PROXIES_SX_API_KEY}"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/app/data"]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@mcp-get-community/server-puppeteer"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@mcp-get-community/server-sequential-thinking"]
+    }
+  }
+}
