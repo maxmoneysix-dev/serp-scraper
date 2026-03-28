@@ -15,8 +15,6 @@
   },
   "dependencies": {
     "hono": "^4.6.0",
-    "@proxies-sx/x402-hono": "^1.0.0",
-    "@proxies-sx/x402-core": "^1.0.0",
     "https-proxy-agent": "^7.0.0",
     "socks-proxy-agent": "^9.0.0",
     "express": "^4.21.0",
@@ -26,15 +24,7 @@
     "compression": "^1.7.0",
     "puppeteer": "^23.10.0",
     "puppeteer-extra": "^3.3.0",
-    "puppeteer-extra-plugin-stealth": "^2.11.0",
-    "@modelcontextprotocol/server-github": "^1.0.0",
-    "@modelcontextprotocol/server-filesystem": "^1.0.0",
-    "@modelcontextprotocol/server-brave-search": "^1.0.0",
-    "@modelcontextprotocol/server-fetch": "^1.0.0",
-    "@proxies-sx/mcp-server": "^1.0.0",
-    "@proxies-sx/browser-mcp": "^1.0.0",
-    "@mcp-get-community/server-puppeteer": "^1.0.0",
-    "@mcp-get-community/server-sequential-thinking": "^1.0.0"
+    "puppeteer-extra-plugin-stealth": "^2.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",
