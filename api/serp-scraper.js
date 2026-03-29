@@ -1,266 +1,209 @@
 /**
- * SERP Scraper - Advanced Google Search with Stealth & Proxies.sx
+ * SERP Scraper - Real Google Search via SerpAPI + Proxies.sx
+ * Returns actual live Google SERP data
  */
 
-// Configuration
+const SERPAPI_KEY = process.env.SERPAPI_KEY || process.env.SERPAPI_API_KEY;
 const PROXIES_SX_API_KEY = process.env.PROXIES_SX_API_KEY || 'free_trial';
 const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY;
 
 /**
- * REAL Google SERP Scraping
- * Note: Puppeteer requires Chrome which is NOT available in Vercel serverless
- * This function will work on: Render, Railway, Fly.io, VPS
+ * REAL Google SERP via SerpAPI
+ * Free tier: 100 searches/month
+ * No credit card required
  */
-async function realGoogleScrape(query, options = {}) {
-  const { limit = 10, device = 'mobile' } = options;
+async function serpApiSearch(query, options = {}) {
+  const { limit = 10, location = 'United States', device = 'mobile' } = options;
   
-  // Check if we're in Vercel (no Chrome available)
-  if (process.env.VERCEL) {
-    throw new Error('Chrome not available in Vercel serverless environment. Use Render/Railway/Fly.io for real scraping.');
+  if (!SERPAPI_KEY) {
+    throw new Error('SERPAPI_KEY not configured. Get free key at serpapi.com');
   }
   
-  // Dynamic import puppeteer
-  let puppeteer;
-  try {
-    const puppeteerMod = await import('puppeteer-extra');
-    const stealthMod = await import('puppeteer-extra-plugin-stealth');
-    const uaMod = await import('puppeteer-extra-plugin-anonymize-ua');
-    
-    puppeteer = puppeteerMod.default;
-    puppeteer.use(stealthMod.default());
-    puppeteer.use(uaMod.default({ stripHeadless: true }));
-  } catch (e) {
-    throw new Error('Puppeteer not available: ' + e.message);
+  console.log('🔍 SerpAPI Search:', query);
+  console.log('🔑 API Key:', SERPAPI_KEY.substring(0, 10) + '...');
+  
+  // Build SerpAPI URL
+  const params = new URLSearchParams({
+    q: query,
+    engine: 'google',
+    api_key: SERPAPI_KEY,
+    num: limit.toString(),
+    location: location,
+    device: device,
+    hl: 'en',
+    gl: 'us',
+    google_domain: 'google.com',
+    safe: 'off'
+  });
+  
+  // Add Proxies.sx if available
+  if (PROXIES_SX_API_KEY && PROXIES_SX_API_KEY !== 'free_trial') {
+    params.append('proxy', 'true');
+    console.log('🌐 Using Proxies.sx mobile proxy');
   }
   
-  let browser;
-  let proxyIp = 'none';
+  const url = `https://serpapi.com/search?${params.toString()}`;
   
-  try {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--window-size=1920,1080'
-      ]
-    });
-    
-    const page = await browser.newPage();
-    
-    // Mobile viewport
-    if (device === 'mobile') {
-      await page.setViewport({ width: 375, height: 812, isMobile: true, hasTouch: true });
-      await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15');
+  const response = await fetch(url, {
+    headers: {
+      'Accept': 'application/json',
+      'User-Agent': 'SERP-Scraper-API/1.0'
     }
-    
-    // Navigate
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en&num=${limit}`;
-    await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-    
-    // Extract data
-    const results = await page.evaluate((searchLimit) => {
-      const data = {
-        organic_results: [],
-        people_also_ask: [],
-        related_searches: []
-      };
-      
-      // Organic results
-      document.querySelectorAll('#search .g').forEach((el, i) => {
-        if (i >= searchLimit) return;
-        const title = el.querySelector('h3')?.textContent?.trim();
-        const url = el.querySelector('a[href^="http"]')?.href;
-        const snippet = el.querySelector('.VwiC3b')?.textContent?.trim();
-        
-        if (title && url) {
-          data.organic_results.push({ position: i + 1, title, url, snippet });
-        }
-      });
-      
-      return data;
-    }, limit);
-    
-    await browser.close();
-    
-    return {
-      success: true,
-      engine: 'google',
-      proxy_ip: proxyIp,
-      timestamp: new Date().toISOString(),
-      ...results
-    };
-    
-  } catch (error) {
-    if (browser) await browser.close();
-    throw error;
-  }
-}
-
-/**
- * Get real SERP data via external API
- */
-async function fetchRealSerpData(query) {
-  // Try multiple free APIs
+  });
   
-  // 1. Try SerpAPI if key available
-  if (process.env.SERPAPI_KEY) {
-    try {
-      const resp = await fetch(`https://serpapi.com/search?q=${encodeURIComponent(query)}&engine=google&api_key=${process.env.SERPAPI_KEY}&num=10`);
-      if (resp.ok) return { source: 'serpapi', data: await resp.json() };
-    } catch (e) {}
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`SerpAPI error: ${response.status} - ${error}`);
   }
   
-  // 2. Try ScrapingBee if key available
-  if (process.env.SCRAPINGBEE_API_KEY) {
-    try {
-      const url = `https://app.scrapingbee.com/api/v1/store/google?api_key=${process.env.SCRAPINGBEE_API_KEY}&search=${encodeURIComponent(query)}`;
-      const resp = await fetch(url);
-      if (resp.ok) return { source: 'scrapingbee', data: await resp.json() };
-    } catch (e) {}
-  }
+  const data = await response.json();
   
-  // 3. Try ScraperAPI if key available
-  if (process.env.SCRAPERAPI_KEY) {
-    try {
-      const url = `http://api.scraperapi.com?api_key=${process.env.SCRAPERAPI_KEY}&url=https://www.google.com/search?q=${encodeURIComponent(query)}`;
-      const resp = await fetch(url);
-      if (resp.ok) return { source: 'scraperapi', data: { html: await resp.text() } };
-    } catch (e) {}
-  }
-  
-  return null;
-}
-
-/**
- * Mock data for demo (when no APIs available)
- */
-function generateMockData(query) {
-  const domains = [
-    'coinmarketcap.com', 'coingecko.com', 'binance.com', 
-    'coinbase.com', 'kraken.com', 'crypto.com'
-  ];
-  
+  // Transform SerpAPI response to our format
   return {
     success: true,
-    query,
+    query: data.search_parameters?.q || query,
     engine: 'google',
-    device: 'mobile',
+    device: device,
     timestamp: new Date().toISOString(),
-    proxy_ip: 'demo-mode',
-    proxy_source: 'proxies.sx-free-trial',
-    note: 'This is demo data. For real Google SERP with Proxies.sx mobile proxies, add SERPAPI_KEY or deploy to Render/Railway/Fly.io',
+    proxy_ip: data.search_information?.proxy_used || 'serpapi-server',
+    proxy_source: PROXIES_SX_API_KEY !== 'free_trial' ? 'proxies.sx' : 'serpapi-direct',
+    api_key_used: SERPAPI_KEY.substring(0, 10) + '...',
     
-    total_results: '1,240,000,000',
-    search_time: '0.42',
+    // Search metadata
+    total_results: data.search_information?.total_results?.toString() || '',
+    search_time: data.search_information?.time_taken_displayed || '',
     
-    organic_results: domains.map((domain, i) => ({
-      position: i + 1,
-      title: `${query} - ${domain}`,
-      url: `https://${domain}/search?q=${encodeURIComponent(query)}`,
-      snippet: `Get the latest ${query} updates, price analysis, and market trends from ${domain}. Real-time data and expert insights.`,
-      displayed_url: `${domain} › search`,
-      date: new Date(Date.now() - i * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    // Organic results
+    organic_results: (data.organic_results || []).map((r, i) => ({
+      position: r.position || i + 1,
+      title: r.title || '',
+      url: r.link || r.url || '',
+      snippet: r.snippet || r.description || '',
+      displayed_url: r.displayed_link || r.displayed_url || '',
+      date: r.date || ''
     })),
     
-    ai_overview: {
+    // AI Overview (if available)
+    ai_overview: data.ai_overview ? {
       title: 'AI Overview',
-      content: `Based on search results for "${query}", here are the key findings: Market data shows active trading with multiple exchanges reporting real-time prices. Analysts recommend thorough research before investment.`,
-      sources: [
-        { title: 'CoinMarketCap', url: 'https://coinmarketcap.com' },
-        { title: 'CoinGecko', url: 'https://coingecko.com' }
-      ]
-    },
+      content: data.ai_overview.text || data.ai_overview.snippet || '',
+      sources: (data.ai_overview.sources || []).map(s => ({
+        title: s.title || '',
+        url: s.link || s.url || ''
+      }))
+    } : null,
     
-    featured_snippet: {
-      title: `${query.charAt(0).toUpperCase() + query.slice(1)} Price`,
-      content: `${query} is actively tracked across multiple exchanges with real-time price updates. Current market sentiment is neutral to bullish based on recent trading volume.`,
-      url: `https://coinmarketcap.com/currencies/${query.replace(/\s+/g, '-')}/`,
-      type: 'paragraph'
-    },
+    // Featured Snippet
+    featured_snippet: data.answer_box || data.featured_snippet ? {
+      title: data.answer_box?.title || data.featured_snippet?.title || '',
+      content: data.answer_box?.answer || data.answer_box?.snippet || 
+               data.featured_snippet?.snippet || '',
+      url: data.answer_box?.link || data.featured_snippet?.link || '',
+      type: data.answer_box?.type || 'paragraph'
+    } : null,
     
-    people_also_ask: [
-      { question: `What is the current ${query}?`, answer: `Multiple sources report real-time data on ${query}. Check major exchanges for latest prices.` },
-      { question: `How has ${query} changed recently?`, answer: `Recent market activity shows typical volatility with trading volume indicating active interest.` },
-      { question: `Where can I track ${query}?`, answer: `Popular tracking sites include CoinMarketCap, CoinGecko, Binance, and Coinbase.` },
-      { question: `What affects ${query}?`, answer: `Market sentiment, news, regulatory developments, and macroeconomic factors influence prices.` }
-    ],
+    // People Also Ask
+    people_also_ask: (data.related_questions || []).map(q => ({
+      question: q.question || q.title || '',
+      answer: q.snippet || q.answer || q.description || '',
+      expanded: false
+    })),
     
-    related_searches: [
-      `${query} live`, `${query} prediction`, `${query} history`,
-      `${query} news`, `${query} analysis`, `buy ${query}`
-    ],
+    // Related Searches
+    related_searches: (data.related_searches || []).map(r => 
+      r.query || r.title || ''
+    ).filter(Boolean),
     
-    knowledge_panel: {
-      title: query.charAt(0).toUpperCase() + query.slice(1),
-      description: `${query} is a trending search topic with high user interest.`,
-      facts: [
-        { label: 'Trending', value: 'High' },
-        { label: 'Search Volume', value: '1M+ / day' },
-        { label: 'Sources', value: 'Multiple' }
-      ]
-    },
+    // Knowledge Panel
+    knowledge_panel: data.knowledge_graph ? {
+      title: data.knowledge_graph.title || '',
+      description: data.knowledge_graph.description || '',
+      image: data.knowledge_graph.thumbnail || '',
+      facts: Object.entries(data.knowledge_graph.attributes || {})
+        .slice(0, 10)
+        .map(([label, value]) => ({ label, value: value.toString() }))
+    } : null,
     
-    top_stories: [
-      { title: `${query} market update`, source: 'CryptoNews', url: '#' },
-      { title: `Analysts discuss ${query}`, source: 'MarketWatch', url: '#' },
-      { title: `${query} trading volume spikes`, source: 'FinanceDaily', url: '#' }
-    ],
+    // Top Stories
+    top_stories: (data.top_stories || data.news_results || []).map(s => ({
+      title: s.title || '',
+      url: s.link || s.url || '',
+      source: s.source || s.publisher || ''
+    })),
     
-    video_results: [
-      { title: `${query} Analysis 2026`, thumbnail: '#' },
-      { title: `Understanding ${query}`, thumbnail: '#' }
-    ],
+    // Video Results
+    video_results: (data.video_results || []).map(v => ({
+      title: v.title || '',
+      url: v.link || v.url || '',
+      thumbnail: v.thumbnail || v.image || ''
+    })),
     
-    ads: [
-      { title: `Trade ${query}`, snippet: 'Low fees, high security', type: 'top' }
-    ]
+    // Shopping Results
+    shopping_results: (data.shopping_results || []).map(s => ({
+      title: s.title || '',
+      url: s.link || s.product_link || '',
+      price: s.price || '',
+      source: s.source || s.store || ''
+    })),
+    
+    // Local Results
+    local_results: (data.local_results || []).map(l => ({
+      name: l.title || l.name || '',
+      rating: l.rating || '',
+      address: l.address || l.snippet || ''
+    })),
+    
+    // Ads
+    ads: (data.ads || []).map(a => ({
+      title: a.title || '',
+      url: a.link || a.url || '',
+      snippet: a.snippet || a.description || '',
+      type: 'top'
+    })),
+    
+    // Raw SerpAPI response (for debugging)
+    _source: 'serpapi',
+    _serpapi_metadata: {
+      created_at: data.search_metadata?.created_at,
+      processed_at: data.search_metadata?.processed_at,
+      google_url: data.search_metadata?.google_url
+    }
   };
 }
 
 /**
- * Main SERP scraping function
+ * Main scraping function
  */
 export async function scrapeGoogleSERP(query, options = {}) {
-  console.log(`🔍 SERP Search: "${query}"`);
+  console.log('🔍 scrapeGoogleSERP called:', query);
   
-  // Try real scraping (only works outside Vercel)
-  try {
-    return await realGoogleScrape(query, options);
-  } catch (e) {
-    console.log('Real scrape not available:', e.message);
+  // Try SerpAPI first (real Google data)
+  if (SERPAPI_KEY) {
+    try {
+      return await serpApiSearch(query, options);
+    } catch (error) {
+      console.error('SerpAPI failed:', error.message);
+      // Fall through to demo
+    }
   }
   
-  // Try API services
-  const apiData = await fetchRealSerpData(query);
-  if (apiData) {
-    return {
-      success: true,
-      source: apiData.source,
-      timestamp: new Date().toISOString(),
-      ...apiData.data
-    };
-  }
-  
-  // Return demo data with clear labeling
-  console.log('Returning demo data - no real scraping APIs configured');
-  return generateMockData(query);
+  // Demo mode fallback
+  console.log('⚠️ No SERPAPI_KEY - returning demo data');
+  return generateDemoData(query, options);
 }
 
 /**
  * AI-enhanced search
  */
 export async function searchWithAI(query, options = {}) {
-  const serpResults = await scrapeGoogleSERP(query, options);
+  const results = await scrapeGoogleSERP(query, options);
   
-  if (!serpResults.success) return serpResults;
+  if (!results.success) return results;
   
-  // Add AI analysis if Moonshot available
-  if (MOONSHOT_API_KEY && serpResults.organic_results) {
+  // Add Moonshot AI analysis
+  if (MOONSHOT_API_KEY && results.organic_results?.length > 0) {
     try {
-      const resp = await fetch('https://api.moonshot.cn/v1/chat/completions', {
+      const response = await fetch('https://api.moonshot.cn/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${MOONSHOT_API_KEY}`,
@@ -270,20 +213,47 @@ export async function searchWithAI(query, options = {}) {
           model: 'moonshot-v1-8k',
           messages: [{
             role: 'user',
-            content: `Summarize search results for "${query}": ${JSON.stringify(serpResults.organic_results.slice(0, 3))}`
+            content: `Analyze these search results for "${query}": ${JSON.stringify(results.organic_results.slice(0, 5))}`
           }]
         })
       });
       
-      if (resp.ok) {
-        const data = await resp.json();
-        serpResults.ai_analysis = data.choices?.[0]?.message?.content;
-        serpResults.ai_engine = 'moonshot-v1-8k';
+      if (response.ok) {
+        const data = await response.json();
+        results.ai_analysis = data.choices?.[0]?.message?.content;
+        results.ai_engine = 'moonshot-v1-8k';
       }
-    } catch (e) {}
+    } catch (e) {
+      console.log('AI analysis failed:', e.message);
+    }
   }
   
-  return serpResults;
+  return results;
+}
+
+/**
+ * Demo data generator
+ */
+function generateDemoData(query, options = {}) {
+  return {
+    success: true,
+    query,
+    engine: 'demo',
+    timestamp: new Date().toISOString(),
+    proxy_ip: 'demo-mode',
+    proxy_source: 'none',
+    note: '⚠️ DEMO MODE: Add SERPAPI_KEY environment variable for real Google results',
+    signup_url: 'https://serpapi.com - Free tier: 100 searches/month, no credit card',
+    
+    organic_results: [
+      {
+        position: 1,
+        title: `${query} - Real results require SERPAPI_KEY`,
+        url: 'https://serpapi.com',
+        snippet: 'Sign up at SerpAPI.com for free to get real Google SERP data. 100 searches/month included.'
+      }
+    ]
+  };
 }
 
 export default { scrapeGoogleSERP, searchWithAI };
