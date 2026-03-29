@@ -3,9 +3,14 @@
  * Returns actual live Google SERP data
  */
 
-const SERPAPI_KEY = process.env.SERPAPI_KEY || process.env.SERPAPI_API_KEY;
-const PROXIES_SX_API_KEY = process.env.PROXIES_SX_API_KEY || 'free_trial';
-const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY;
+// Get env vars at runtime (important for Vercel serverless)
+function getEnvVars() {
+  return {
+    SERPAPI_KEY: process.env.SERPAPI_KEY || process.env.SERPAPI_API_KEY,
+    PROXIES_SX_API_KEY: process.env.PROXIES_SX_API_KEY || 'free_trial',
+    MOONSHOT_API_KEY: process.env.MOONSHOT_API_KEY
+  };
+}
 
 /**
  * REAL Google SERP via SerpAPI
@@ -14,6 +19,7 @@ const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY;
  */
 async function serpApiSearch(query, options = {}) {
   const { limit = 10, location = 'United States', device = 'mobile' } = options;
+  const { SERPAPI_KEY, PROXIES_SX_API_KEY } = getEnvVars();
   
   if (!SERPAPI_KEY) {
     throw new Error('SERPAPI_KEY not configured. Get free key at serpapi.com');
@@ -37,6 +43,7 @@ async function serpApiSearch(query, options = {}) {
   });
   
   // Add Proxies.sx if available
+  const { PROXIES_SX_API_KEY } = getEnvVars();
   if (PROXIES_SX_API_KEY && PROXIES_SX_API_KEY !== 'free_trial') {
     params.append('proxy', 'true');
     console.log('🌐 Using Proxies.sx mobile proxy');
@@ -176,6 +183,7 @@ async function serpApiSearch(query, options = {}) {
  */
 export async function scrapeGoogleSERP(query, options = {}) {
   console.log('🔍 scrapeGoogleSERP called:', query);
+  const { SERPAPI_KEY } = getEnvVars();
   
   // Try SerpAPI first (real Google data)
   if (SERPAPI_KEY) {
@@ -196,6 +204,7 @@ export async function scrapeGoogleSERP(query, options = {}) {
  * AI-enhanced search
  */
 export async function searchWithAI(query, options = {}) {
+  const { MOONSHOT_API_KEY } = getEnvVars();
   const results = await scrapeGoogleSERP(query, options);
   
   if (!results.success) return results;
