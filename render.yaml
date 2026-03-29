@@ -1,0 +1,54 @@
+# Render deployment configuration
+# Deploy to Render: https://render.com
+
+services:
+  # Main API Server
+  - type: web
+    name: serp-api-server
+    runtime: node
+    plan: free
+    region: ohio
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: AI_ENGINE_URL
+        value: https://serp-ai-engine.onrender.com
+      - key: X402_PRIVATE_KEY
+        sync: false
+      - key: X402_RECEIVER_ADDRESS
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # AI Engine (Python FastAPI)
+  - type: web
+    name: serp-ai-engine
+    runtime: python
+    plan: free
+    region: ohio
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: PORT
+        value: 10000
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MOONSHOT_API_KEY
+        sync: false
+      - key: PROXIES_SX_API_KEY
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # Redis for caching
+  - type: redis
+    name: serp-redis
+    plan: free
+    region: ohio
+    ipAllowList: []

@@ -1,0 +1,81 @@
+# Google Cloud Run deployment configuration
+# Deploy: gcloud run services replace gcp-cloud-run.yaml
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: serp-api-server
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        # Keep instance always running (minimize cold starts)
+        run.googleapis.com/min-instances: "1"
+        run.googleapis.com/max-instances: "10"
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+        - image: gcr.io/PROJECT_ID/serp-api-server:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+            - name: AI_ENGINE_URL
+              value: https://serp-ai-engine-PROJECT_ID.run.app
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: "1"
+              memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: serp-ai-engine
+  annotations:
+    run.googleapis.com/ingress: internal
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/min-instances: "1"
+        run.googleapis.com/max-instances: "5"
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 50
+      timeoutSeconds: 300
+      containers:
+        - image: gcr.io/PROJECT_ID/serp-ai-engine:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: PORT
+              value: "8000"
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: "1"
+              memory: 2Gi

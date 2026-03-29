@@ -1,0 +1,34 @@
+# Railway deployment configuration
+# Deploy to Railway: https://railway.app
+
+services:
+  api-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api-server
+    ports:
+      - 3000
+    env:
+      - NODE_ENV=production
+      - PORT=3000
+    healthcheck:
+      path: /health
+      port: 3000
+    restart: unless-stopped
+
+  ai-engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai-engine
+    ports:
+      - 8000
+    env:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - 6379
+    restart: unless-stopped

@@ -60,9 +60,9 @@ module.exports = {
   deploy: {
     production: {
       user: 'ubuntu',
-      host: ['oracle-vm-1', 'oracle-vm-2'],
+      host: ['your-server-1', 'your-server-2'],
       ref: 'origin/main',
-      repo: 'https://github.com/yourusername/serp-scraper.git',
+      repo: 'https://github.com/maxmoneysix-dev/serp-scraper.git',
       path: '/home/ubuntu/serp-scraper',
       'post-deploy': 'npm install && pip install -r requirements.txt && pm2 reload ecosystem.config.js --env production',
       'pre-setup': 'apt-get update && apt-get install -y git nodejs python3 python3-pip'
