@@ -1,72 +1,86 @@
 # 🚀 SERP Scraper - AI-Powered Search API
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/maxmoneysix-dev/serp-scraper)
+
 **Goal:** Win the Proxies.sx $200 SERP scraper bounty and run as a live paid API service earning USDC 24/7.
+
+## 🚀 One-Click Deploy
+
+### Option 1: Render (Easiest - Free Tier)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/maxmoneysix-dev/serp-scraper)
+
+Click the button above and it will:
+1. Create 3 services (API server, AI engine, Redis)
+2. Auto-configure with your environment variables
+3. Deploy in ~5 minutes
+
+**Live URLs after deploy:**
+- API: `https://serp-api-server.onrender.com`
+- AI Engine: `https://serp-ai-engine.onrender.com`
+
+### Option 2: Fly.io (Free Always-On)
+```bash
+./scripts/deploy-fly.sh
+```
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                           LOCAL (Dell)                              │
-│  ┌──────────────────────────────────────────────────────────┐      │
-│  │ Thin MCP Client Bridge (10MB RAM)                        │      │
-│  └──────────────────────┬───────────────────────────────────┘      │
-└─────────────────────────┼───────────────────────────────────────────┘
-                          │ WireGuard/HTTPS
-                          ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                     ORACLE CLOUD FREE TIER                          │
-│  ┌──────────────────────────────────────────────────────────┐      │
-│  │ VM 1: AI Agent Engine (24/7)                             │      │
-│  │ - FastAPI + Composio Gateway                             │      │
-│  │ - Playwright cluster (4 browsers)                        │      │
-│  │ - MCP Server Hub                                         │      │
-│  └──────────────────────────────────────────────────────────┘      │
-│  ┌──────────────────────────────────────────────────────────┐      │
-│  │ VM 2: API Server + x402 Payments (24/7)                  │      │
-│  │ - Hono.js API with x402 monetization                     │      │
-│  │ - DuckDB for scraped data                                │      │
-│  └──────────────────────────────────────────────────────────┘      │
+│                           RENDER CLOUD                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────────────┐      ┌──────────────────────────┐        │
+│  │ serp-api-server      │      │ serp-ai-engine           │        │
+│  │ - Hono.js API        │◄────►│ - FastAPI                │        │
+│  │ - x402 payments      │      │ - Playwright browsers    │        │
+│  │ - Redis cache        │      │ - Moonshot AI            │        │
+│  └──────────────────────┘      └──────────────────────────┘        │
+│           │                                   │                     │
+│           └──────────┬────────────────────────┘                     │
+│                      ▼                                              │
+│              https://*.onrender.com                                 │
+│                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
 
-### Local Development
+### Test the API
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-npm install
+# Health check
+curl https://serp-api-server.onrender.com/health
 
-# Run local API
-python -m uvicorn api.main:app --reload
-```
-
-### Deploy to Oracle Cloud
-```bash
-# Bootstrap from GitHub Codespace
-./scripts/deploy.sh
+# Search
+curl -X POST https://serp-api-server.onrender.com/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "AI agents", "engine": "duckduckgo"}'
 ```
 
 ## Features
 
 - 🔍 **SERP Scraping** - Google, Bing, DuckDuckGo
-- 🤖 **AI Agents** - LangGraph + CrewAI orchestration
-- 🌐 **Browser Automation** - Playwright, CamouFox, Puppeteer
+- 🤖 **AI Agents** - LangGraph + Moonshot AI
+- 🌐 **Browser Automation** - Playwright, Puppeteer
 - 💰 **x402 Payments** - Get paid per API call in USDC
 - 🔗 **MCP Servers** - GitHub, Filesystem, Brave Search
-- 🐳 **Docker Deploy** - One-command deployment
 
 ## API Endpoints
 
 | Endpoint | Method | Price | Description |
 |----------|--------|-------|-------------|
+| `/health` | GET | Free | Health check |
 | `/search` | POST | $0.01 | Basic SERP scrape |
 | `/search/ai` | POST | $0.05 | AI-enhanced results |
 | `/scrape` | POST | $0.02 | Custom URL scraping |
 
 ## Environment Variables
 
-Copy `.env.template` to `.env` and fill in your keys.
+Already configured in `render.yaml`:
+- `MOONSHOT_API_KEY` - AI provider
+- `PROXIES_SX_API_KEY` - Proxies.sx integration
+- `X402_PRIVATE_KEY` - Solana wallet for payments
+- `X402_RECEIVER_ADDRESS` - USDC receiver address
 
 ## License
 
