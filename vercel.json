@@ -14,6 +14,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
+    "SERPAPI_KEY": "37eda280b48ce7db1bac6196a59745e5175faf996835823a06939d7718fc49a8",
     "MOONSHOT_API_KEY": "sk-H5M5pLgSe5w0IqmSxxuxJ98s7quLrAgdouv85hyAMzJaD1vx",
     "PROXIES_SX_API_KEY": "free_trial",
     "X402_PRIVATE_KEY": "6wJg9tyKFbzjiM5kU0TD7wOIB80/bfxEgyp9dNyzKSsAf8/Vpenpg1MHx0QQC8ZnCkpZ+8p/SGv13hbNXKflOQ==",
